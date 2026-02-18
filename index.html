@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --neon: #00ffcc; --purple: #bc13fe; --dark: #020205; --gold: #ffcc00; --red: #ff3300; --blue: #0088ff; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+        body { background: var(--dark); color: #fff; text-align: center; font-family: 'Orbitron', sans-serif; margin: 0; padding: 10px; overflow-x: hidden; }
+
+        #info-box {
+            position: fixed; top: 12%; left: 50%; transform: translateX(-50%);
+            background: var(--gold); color: #000; padding: 10px 20px; border-radius: 8px;
+            font-weight: 900; display: none; z-index: 10000; box-shadow: 0 0 15px var(--gold);
+            border: 2px solid #fff; pointer-events: none; font-size: 11px; max-width: 85%;
+        }
+
+        .header-btns { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
+        .circle-btn { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--neon); background: rgba(0,255,204,0.1); color: white; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+
+        .balance-card { padding: 15px; border: 2px solid var(--neon); border-radius: 20px; background: rgba(0,0,0,0.8); margin-bottom: 10px; }
+        #balance { font-size: 32px; font-weight: 900; color: var(--neon); text-shadow: 0 0 10px var(--neon); }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; font-size: 9px; color: #888; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
+        .stat-val { color: var(--neon); font-weight: 700; }
+
+        #orb-container { margin: 15px auto; width: 140px; height: 140px; position: relative; }
+        #cyber-orb { 
+            width: 100%; height: 100%; border-radius: 50%;
+            background: radial-gradient(circle, var(--purple) 0%, #1a0033 100%);
+            border: 4px solid var(--neon); box-shadow: 0 0 20px var(--purple);
+            cursor: pointer; transition: 0.1s; display: flex; align-items: center; justify-content: center;
+        }
+        #cyber-orb:active { transform: scale(0.9); }
+        #orb-inner { width: 35px; height: 35px; background: var(--neon); border-radius: 50%; filter: blur(10px); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 0.8; } }
+
+        .slot-machine { background: #111; border: 2px solid var(--gold); border-radius: 15px; padding: 10px; margin: 10px auto; width: 95%; }
+        .reels { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; background: #000; padding: 10px; border-radius: 10px; }
+        .reel { width: 45px; height: 45px; background: #222; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 1px solid #333; }
+        .spinning { animation: spin 0.1s linear infinite; }
+        @keyframes spin { 0% { transform: translateY(-3px); } 100% { transform: translateY(3px); } }
+
+        #slot-btn { width: 100%; padding: 15px; background: var(--gold); border: none; border-radius: 10px; font-family: 'Orbitron'; font-weight: 900; color: #000; }
+        #slot-btn:disabled { background: #333; color: #666; }
+
+        #market-panel, #settings-panel { position: fixed; top: 0; right: -100%; width: 100%; height: 100%; background: #020205; z-index: 2000; transition: 0.4s; padding: 20px; overflow-y: auto; text-align: left; }
+        .panel-open { right: 0 !important; }
+        .close-btn { width: 100%; padding: 15px; background: var(--red); border: none; color: white; border-radius: 12px; font-weight: 900; margin-bottom: 20px; text-align: center; }
+        
+        .item-btn { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 14px; border-radius: 10px; width: 100%; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .can-buy { border-color: var(--neon) !important; background: rgba(0,255,204,0.1) !important; }
+        .market-header { color: var(--neon); margin: 20px 0 10px; font-weight: 900; border-left: 4px solid var(--neon); padding-left: 8px; font-size: 14px; }
+        
+        .lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .lang-btn { background: #111; border: 1px solid var(--neon); color: white; padding: 10px; border-radius: 5px; font-family: 'Orbitron'; cursor: pointer; font-size: 12px; }
+        .lang-active { background: var(--neon); color: black; }
+    </style>
+</head>
+<body onload="init()">
+
+<div id="info-box"></div>
+
+<div class="header-btns">
+    <button class="circle-btn" onclick="togglePanel('settings-panel')">⚙️</button>
+    <div style="font-size: 18px; font-weight: 900; color: var(--neon);">CYBER CLICKER</div>
+    <button class="circle-btn" onclick="togglePanel('market-panel')">🛒</button>
+</div>
+
+<div class="balance-card" id="main-card">
+    <div id="balance">0</div>
+    <div class="stats-grid">
+        <div><span id="l-oto">OTO</span>: <span id="st-oto" class="stat-val">0</span></div>
+        <div><span id="l-klik">KLİK</span>: <span id="st-klik" class="stat-val">1</span></div>
+        <div><span id="l-crit">KRİTİK</span>: <span id="st-crit-sh" class="stat-val" style="color:var(--gold)">0.5%</span></div>
+        <div><span id="l-pow">GÜCÜ</span>: <span id="st-crit-multi" class="stat-val" style="color:var(--gold)">x3</span></div>
+        <div><span id="l-tktsh">BİLET ŞANS</span>: <span id="st-tkt-sh" class="stat-val" style="color:var(--blue)">0.1%</span></div>
+        <div><span id="l-tkt">BİLET</span>: <span id="st-tkt-count" class="stat-val" style="color:var(--blue)">0</span></div>
+    </div>
+</div>
+
+<div id="orb-container">
+    <div id="cyber-orb" onclick="tap()">
+        <div id="orb-inner"></div>
+    </div>
+</div>
+
+<div class="slot-machine">
+    <div id="slot-res" style="color:var(--gold); font-size: 12px; font-weight: 900; margin-bottom: 5px; height: 15px;">CYBER SLOTS</div>
+    <div class="reels">
+        <div class="reel" id="r1">⚡</div>
+        <div class="reel" id="r2">⚡</div>
+        <div class="reel" id="r3">⚡</div>
+    </div>
+    <button onclick="useTicket()" id="slot-btn">BİLET İŞLƏT</button>
+</div>
+
+<div id="market-panel">
+    <button class="close-btn l-back" onclick="togglePanel('market-panel')">GERİ</button>
+    <div id="market-list"></div>
+</div>
+
+<div id="settings-panel">
+    <button class="close-btn l-back" onclick="togglePanel('settings-panel')">GERİ</button>
+    <h2 id="l-settings" style="color: var(--neon);">AYARLAR</h2>
+    <div class="lang-grid">
+        <button class="lang-btn" id="btn-az" onclick="setLang('az')">🇦🇿 AZ</button>
+        <button class="lang-btn" id="btn-tr" onclick="setLang('tr')">🇹🇷 TR</button>
+        <button class="lang-btn" id="btn-en" onclick="setLang('en')">🇺🇸 EN</button>
+        <button class="lang-btn" id="btn-ru" onclick="setLang('ru')">🇷🇺 RU</button>
+        <button class="lang-btn" id="btn-de" onclick="setLang('de')">🇩🇪 DE</button>
+    </div>
+    <button id="l-reset" onclick="resetGame()" style="width:100%; padding:15px; background:none; border: 1px solid var(--red); color: var(--red); border-radius: 10px; font-weight: 700;">SIFIRLA</button>
+</div>
+
+<script>
+    let money = 0, baseCps = 0, baseCpc = 1, tickets = 0, currentLang = 'az';
+    let critChance = 0.005, critMulti = 3, tktChance = 0.001, slotCooldown = 30;
+    let items = { oto: [], klik: [], lab: [], kvant: [], black: [] };
+    const symbols = ["💎", "⚡", "🤖", "💿", "🔋"];
+
+    const langData = {
+        az: { oto: "OTO", klik: "KLİK", crit: "KRİTİK", pow: "GÜCÜ", tktsh: "BİLET ŞANS", tkt: "BİLET", slotBtn: "BİLET İŞLƏT", back: "GERİ", settings: "AYARLAR", reset: "SIFIRLA", spinning: "FIRLANIR...", jackpot: "JACKPOT!", win: "UDUŞ: ", ready: "HAZIR", dOto: "Saniyədə +", dKlik: "Klik başına +", dLab: "Kritik Şans +1% | Güc +1.5x", dKvant: "Sistem OTO +30%", dBlack: "Bilet Şansı +60% | OTO -15%" },
+        tr: { oto: "OTO", klik: "TIK", crit: "KRİTİK", pow: "GÜÇ", tktsh: "BİLET ŞANS", tkt: "BİLET", slotBtn: "BİLET KULLAN", back: "GERİ", settings: "AYARLAR", reset: "SIFIRLA", spinning: "DÖNÜYOR...", jackpot: "JACKPOT!", win: "KAZANÇ: ", ready: "HAZIR", dOto: "Saniyede +", dKlik: "Tık başına +", dLab: "Kritik Şans +1% | Güç +1.5x", dKvant: "Sistem OTO +30%", dBlack: "Bilet Şansı +60% | OTO -15%" },
+        en: { oto: "AUTO", klik: "CLICK", crit: "CRIT", pow: "POWER", tktsh: "TKT CHANCE", tkt: "TICKET", slotBtn: "USE TICKET", back: "BACK", settings: "SETTINGS", reset: "RESET", spinning: "SPINNING...", jackpot: "JACKPOT!", win: "WIN: ", ready: "READY", dOto: "Per Second +", dKlik: "Per Click +", dLab: "Crit Chance +1% | Power +1.5x", dKvant: "System Auto +30%", dBlack: "Tkt Chance +60% | Auto -15%" },
+        ru: { oto: "АВТО", klik: "КЛИК", crit: "КРИТ", pow: "СИЛА", tktsh: "ШАНС БИЛ.", tkt: "БИЛЕТ", slotBtn: "БИЛЕТ", back: "НАЗАД", settings: "НАСТРОЙКИ", reset: "СБРОС", spinning: "КРУТИМ...", jackpot: "ДЖЕКПОТ!", win: "ВЫИГРЫШ: ", ready: "ГОТОВО", dOto: "В секунду +", dKlik: "За клик +", dLab: "Крит Шанс +1% | Сила +1.5x", dKvant: "Система Авто +30%", dBlack: "Шанс бил. +60% | Авто -15%" },
+        de: { oto: "AUTO", klik: "KLICK", crit: "KRIT", pow: "KRAFT", tktsh: "TKT CHANCE", tkt: "TICKET", slotBtn: "TICKET NUTZEN", back: "ZURÜCK", settings: "EINSTELLUNGEN", reset: "RESET", spinning: "DREHEN...", jackpot: "JACKPOT!", win: "GEWINN: ", ready: "BEREIT", dOto: "Pro Sekunde +", dKlik: "Pro Klick +", dLab: "Krit-Chance +1% | Kraft +1.5x", dKvant: "System Auto +30%", dBlack: "Tkt-Chance +60% | Auto -15%" }
+    };
+
+    const adSiyahisi = {
+        oto: ["Nano Bot", "Siri Lite", "Web Miner", "Home Server", "Cloud Node", "Data Center", "Neural Net", "Cyber Farm", "AI Grid", "Power Station", "Satellite", "Star Link", "Galaxy Node", "Deep Space", "Void Miner", "Quantum Bot", "Ender Net", "Universal AI", "Omni Core", "Infinity"],
+        klik: ["Sharp Nail", "Steel Tip", "Iron Grip", "Power Tap", "Sonic Boom", "Laser Beam", "Atomic Hit", "Cyber Glove", "Plasma Fist", "Meteor Tap", "Cracker X", "Time Bender", "Gravity Hammer", "Star Smasher", "Nebula Crush", "Photon Blast", "Hand of God", "Reality Warp", "Void Strike", "Infinity Tap"],
+        lab: ["Adrenaline", "Brain Cell", "Reflex Core", "Sync Chip", "Titan Bone", "Nano Blood", "Acid Serum", "Bio Engine", "Nerve Link", "Ghost Eye", "Pulse Drive", "Alpha Dose", "Mega Morph", "Z-Virus", "Soul Sync", "God DNA", "Pure Energy", "The Source", "Crit Overdrive", "Final Serum"],
+        kvant: ["Photon", "Quark", "Muon", "Gluon", "Boson", "String", "Neutrino", "Dark Mat", "Anti-Mat", "Void Part", "Zero Point", "Singular", "Event Hor", "Wormhole", "Hyper Dim", "Super Pos", "Chaos Core", "Multi-Uni", "The Gate", "Absolute"],
+        black: ["Dark Web", "Ghost Key", "Mafia Deal", "Virus v1", "Shadow PC", "Root Access", "Zero Day", "Binary Hell", "Deep State", "Void Code", "Soul Bond", "Time Theft", "Chaos Gate", "Dark Matter", "Hack God", "God Virus", "End Game", "Death Note", "Black Hole", "Oblivion"]
+    };
+
+    function format(n) {
+        if (n < 1000) return Math.round(n);
+        const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+        let tier = Math.floor(Math.log10(n) / 3);
+        let scaled = n / Math.pow(10, tier * 3);
+        return (scaled >= 10 ? Math.round(scaled) : scaled.toFixed(1)) + suffixes[tier];
+    }
+
+    function init() {
+        for(let key in adSiyahisi) {
+            adSiyahisi[key].forEach((name, i) => {
+                let cost = 50 * Math.pow(8, i);
+                let val = (key === 'oto') ? 2 * Math.pow(6, i) : 1 * Math.pow(5, i);
+                if(key==='lab') cost *= 400; if(key==='kvant') cost *= 5000; if(key==='black') cost *= 1500;
+                items[key].push({ name, cost, val, key });
+            });
+        }
+        setLang('az');
+        setInterval(() => { money += (baseCps/10); updateUI(); }, 100);
+    }
+
+    function setLang(l) {
+        currentLang = l; const d = langData[l];
+        document.getElementById('l-oto').innerText = d.oto;
+        document.getElementById('l-klik').innerText = d.klik;
+        document.getElementById('l-crit').innerText = d.crit;
+        document.getElementById('l-pow').innerText = d.pow;
+        document.getElementById('l-tktsh').innerText = d.tktsh;
+        document.getElementById('l-tkt').innerText = d.tkt;
+        document.getElementById('slot-btn').innerText = d.slotBtn;
+        document.querySelectorAll('.l-back').forEach(el => el.innerText = d.back);
+        document.getElementById('l-settings').innerText = d.settings;
+        document.getElementById('l-reset').innerText = d.reset;
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('lang-active'));
+        document.getElementById('btn-' + l).classList.add('lang-active');
+        renderShop();
+    }
+
+    function showInfo(it) {
+        const box = document.getElementById('info-box');
+        const d = langData[currentLang];
+        let txt = "";
+        if(it.key === 'oto') txt = d.dOto + format(it.val);
+        else if(it.key === 'klik') txt = d.dKlik + format(it.val);
+        else if(it.key === 'lab') txt = d.dLab;
+        else if(it.key === 'kvant') txt = d.dKvant;
+        else if(it.key === 'black') txt = d.dBlack;
+        box.innerText = txt; box.style.display = 'block';
+    }
+
+    function renderShop() {
+        const list = document.getElementById('market-list'); list.innerHTML = "";
+        for(let cat in items) {
+            let h = document.createElement('div'); h.className = "market-header"; 
+            h.innerText = cat.toUpperCase();
+            list.appendChild(h);
+            items[cat].forEach((it, i) => {
+                let btn = document.createElement('button');
+                btn.className = "item-btn"; btn.dataset.cost = it.cost;
+                btn.innerHTML = `<span>${it.name}</span> <b>${format(it.cost)}</b>`;
+                btn.onclick = () => buy(cat, i);
+                btn.onpointerdown = () => showInfo(it);
+                btn.onpointerup = () => document.getElementById('info-box').style.display = 'none';
+                list.appendChild(btn);
+            });
+        }
+    }
+
+    function tap() {
+        let isCrit = Math.random() < critChance;
+        money += isCrit ? baseCpc * critMulti : baseCpc;
+        if(Math.random() < tktChance) tickets++;
+        updateUI();
+    }
+
+    function useTicket() {
+        if(tickets < 1) return;
+        tickets--;
+        const btn = document.getElementById('slot-btn'), resText = document.getElementById('slot-res');
+        const reels = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')];
+        btn.disabled = true; reels.forEach(r => r.classList.add('spinning'));
+        resText.innerText = langData[currentLang].spinning;
+
+        setTimeout(() => {
+            let res = reels.map(() => symbols[Math.floor(Math.random()*symbols.length)]);
+            reels.forEach((r, i) => { r.classList.remove('spinning'); r.innerText = res[i]; });
+            let winMult = (res[0] === res[1] && res[1] === res[2]) ? 6 : 1;
+            let win = Math.round((money * 0.35 + 1000) * winMult);
+            money += win;
+            resText.innerText = (winMult > 1 ? langData[currentLang].jackpot : langData[currentLang].win) + "+" + format(win);
+            let timer = slotCooldown;
+            let intv = setInterval(() => {
+                timer--; btn.innerText = timer + "s";
+                if(timer <= 0) { clearInterval(intv); btn.disabled = false; btn.innerText = langData[currentLang].slotBtn; resText.innerText = langData[currentLang].ready; }
+            }, 1000);
+        }, 1000);
+    }
+
+    function updateUI() {
+        document.getElementById('balance').innerText = format(money);
+        document.getElementById('st-oto').innerText = format(baseCps);
+        document.getElementById('st-klik').innerText = format(baseCpc);
+        document.getElementById('st-crit-sh').innerText = (critChance * 100).toFixed(1) + "%";
+        document.getElementById('st-crit-multi').innerText = "x" + critMulti.toFixed(1);
+        document.getElementById('st-tkt-sh').innerText = (tktChance * 100).toFixed(2) + "%";
+        document.getElementById('st-tkt-count').innerText = tickets;
+        document.querySelectorAll('.item-btn').forEach(b => b.classList.toggle('can-buy', money >= parseFloat(b.dataset.cost)));
+    }
+
+    function buy(cat, i) {
+        let it = items[cat][i];
+        if(money >= it.cost) {
+            money -= it.cost;
+            if(cat==='oto') baseCps += it.val; 
+            else if(cat==='klik') baseCpc += it.val;
+            else if(cat==='lab') { critChance += 0.01; critMulti += 1.5; }
+            else if(cat==='kvant') baseCps *= 1.3;
+            else if(cat==='black') { tktChance *= 1.6; baseCps *= 0.85; }
+            it.cost *= 5.5; renderShop(); updateUI();
+        }
+    }
+
+    function togglePanel(id) { document.getElementById(id).classList.toggle('panel-open'); }
+    function resetGame() { if(confirm(langData[currentLang].reset + "?")) location.reload(); }
+</script>
+</body>
+</html>
